@@ -19,8 +19,11 @@ public:
     TicTacToe() {
         // Inicializa o tabuleiro e as variáveis do jogo
         for (auto& row : board) { row.fill(' '); }
+        this-> current_player = 'X';  // Começa com o jogador X
         this->game_over = false;
         this->winner = ' ';
+        
+        this->display_board();
 
     }
 
@@ -39,26 +42,23 @@ public:
     }
 
     bool make_move(char player, int row, int col) {
-        // Implementar a lógica para realizar uma jogada no tabuleiro
-        // Utilizar mutex para controle de acesso
-        // Utilizar variável de condição para alternância de turnos
-
-         // Bloqueia o mutex
+        // Bloqueia o mutex
         std::unique_lock<std::mutex> lock(board_mutex);
 
         // Espera ate que seja a vez deste jogador OU o jogo ja tenha acabado
         turn_cv.wait(lock, [this, player] {
-            return current_player == player || game_over;
+            return (this->current_player == player || this->game_over);
         });
 
-         // Se o jogo ja terminou enquanto esperava, aborta
-            if (this->game_over) return false;
+        // Se o jogo ja terminou enquanto esperava, aborta
+        if (this->game_over) return false;
 
-        // Verifica se a casa estah livre
+        // Verifica se a casa esta livre
         if (board[row][col] != ' ') return false;
 
         // Faz a jogada
         board[row][col] = player;
+        this->display_board();
 
         // Verifica vitoria
         if (check_win(player)) {
@@ -68,7 +68,7 @@ public:
         // Verifica empate
         else if (check_draw()) {
             this->game_over = true;
-            this->winner = ' ';  // empate
+            this->winner = ' ';
         }
         // Senao, alterna o jogador atual
         else {
@@ -215,9 +215,9 @@ int main() {
     t1.join();
     t2.join();
 
+
     // Exibir o resultado final do jogo
     std::cout << "\nJogo finalizado!\n";
-    game.display_board();
 
     char winner = game.get_winner();
     if (winner == 'D') {
